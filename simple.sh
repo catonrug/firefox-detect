@@ -12,7 +12,7 @@ if [ ! -f "$db" ]; then
 fi
 
 #set download link
-download=$(echo "https://sourceforge.net/projects/conemu/rss?path=/")
+download=$(echo "https://www.mozilla.org/en-US/firefox/all/")
 
 #set language
 lang=$(echo "en-US")
