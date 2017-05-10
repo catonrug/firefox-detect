@@ -179,8 +179,8 @@ $size"
 fi
 
 else
-#$filename is already in database
-echo "$file" is already in database
+#$id is already in database
+echo "$id" is already in database
 fi
 
 rm -rf $tmp/*
