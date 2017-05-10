@@ -92,10 +92,10 @@ wget -S --spider -o $tmp/dl.log "$link"
 url=$(sed "s/http/\nhttp/g;s/\.exe/\.exe\n/g" $tmp/dl.log | grep -m1 "^http.*\.exe$")
 
 #cut the server name from url cause it can differ
-file=$(echo "$link" | sed "s/^.*\///g")
+id=$(echo "$link" | sed "s/^.*\///g")
 
 #check if this filename is in database
-grep "$file" $db > /dev/null
+grep "$id" $db > /dev/null
 if [ $? -ne 0 ]; then
 echo
 
@@ -128,7 +128,7 @@ sha1=$(sha1sum $tmp/$filename | sed "s/\s.*//g")
 echo
 
 echo "$url">> $db
-echo "$file">> $db
+echo "$id">> $db
 echo "$version">> $db
 echo "$md5">> $db
 echo "$sha1">> $db
