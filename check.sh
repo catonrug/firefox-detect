@@ -63,6 +63,7 @@ fi
 #set url
 name=$(echo "Firefox")
 download=$(echo "https://www.mozilla.org/en-US/firefox/all/")
+lang=$(echo "en-US")
 
 wget -S --spider -o $tmp/output.log "$download"
 
@@ -71,7 +72,7 @@ if [ $? -eq 0 ]; then
 #if file request retrieve http code 200 this means OK
 
 #get all exe english installers
-filelist=$(wget -qO- "$download" | sed "s/http/\nhttp/g;s/\"/\n/g" | grep "^http.*win.*lang.*en-US" | sort | uniq | sed '$alast line')
+filelist=$(wget -qO- "$download" | sed "s/http/\nhttp/g;s/\"/\n/g" | grep "^http.*win.*lang.*`echo $lang`" | sort | uniq | sed '$alast line')
 
 #count how many links are in download page. substarct one fake last line from array
 links=$(echo "$filelist" | head -n -1 | wc -l)
@@ -79,25 +80,31 @@ if [ $links -gt 1 ]; then
 echo $links download links found
 echo
 
-printf %s "$filelist" | while IFS= read -r url
+printf %s "$filelist" | while IFS= read -r link
 do {
 
+echo "$link"
+
 #enter sipider mode
-wget -S --spider $tmp/dl.log "$url" 
+wget -S --spider -o $tmp/dl.log "$link"
 
-dl=$(sed "s/http/\nhttp/g;s/\.exe/\.exe\n/g" $tmp/dl.log | grep -m1 "^http.*\.exe$")
+#look for exact download link
+url=$(sed "s/http/\nhttp/g;s/\.exe/\.exe\n/g" $tmp/dl.log | grep -m1 "^http.*\.exe$")
 
-#calculate filename
-filename=$(echo "$dl" | sed "s/\//\n/g" | grep "exe")
+#cut the server name from url cause it can differ
+file=$(echo "$link" | sed "s/^.*\///g")
 
 #check if this filename is in database
-grep "$url" $db > /dev/null
+grep "$file" $db > /dev/null
 if [ $? -ne 0 ]; then
 echo
 
+#calculate filename
+filename=$(echo "$url" | sed "s/\//\n/g" | grep "exe")
+
 #download file
 echo Downloading $filename
-wget $url -O $tmp/$filename -q
+wget "$url" -O "$tmp/$filename" -q
 
 #check downloded file size if it is fair enought
 size=$(du -b $tmp/$filename | sed "s/\s.*$//g")
@@ -105,7 +112,7 @@ if [ $size -gt 51200 ]; then
 echo
 
 #detect version from url
-version=$(echo "$filename" | sed "s/\./\n/g" | grep -v "[b-zA-Z]" | grep "[0-9]\+")
+version=$(echo "$url" | sed "s/\//\n/g" | grep -v "[b-zA-Z]" | grep "[0-9]\+")
 
 #check if version matchs version pattern
 echo $version | grep "^[0-9]\+"
@@ -120,34 +127,20 @@ echo creating sha1 checksum of file..
 sha1=$(sha1sum $tmp/$filename | sed "s/\s.*//g")
 echo
 
-echo "$filename">> $db
+echo "$url">> $db
+echo "$file">> $db
 echo "$version">> $db
 echo "$md5">> $db
 echo "$sha1">> $db
 echo >> $db
 
-#if google drive config exists then upload and delete file:
-if [ -f "../gd/$appname.cfg" ]
-then
-echo Uploading $filename to Google Drive..
-echo Make sure you have created \"$appname\" direcotry inside it!
-../uploader.py "../gd/$appname.cfg" "$tmp/$filename"
-echo
-fi
-
 #addititonal words in email subject. sequence is important
 case "$url" in
-*Preview*7z*)
-type=$(echo "Portable (Preview)")
+*win32*exe)
+type=$(echo "32-bit")
 ;;
-*Stable*7z*)
-type=$(echo "Portable (Stable)")
-;;
-*Preview*exe*)
-type=$(echo "(Preview)")
-;;
-*Stable*exe*)
-type=$(echo "(Stable)")
+*win64*exe)
+type=$(echo "64-bit")
 ;;
 esac
 
@@ -155,11 +148,9 @@ esac
 emails=$(cat ../posting | sed '$aend of file')
 printf %s "$emails" | while IFS= read -r onemail
 do {
-python ../send-email.py "$onemail" "$name $version $type" "$url 
+python ../send-email.py "$onemail" "$name $version $type $lang" "$url
 $md5
 $sha1
-
-https://drive.google.com/drive/folders/0B_3uBwg3RcdVbmp0LUg0YkI1aUE 
 "
 } done
 echo
@@ -189,7 +180,7 @@ fi
 
 else
 #$filename is already in database
-echo "$filename" is already in database
+echo "$file" is already in database
 fi
 
 rm -rf $tmp/*
