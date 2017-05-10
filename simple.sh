@@ -32,7 +32,7 @@ url=$(sed "s/http/\nhttp/g;s/\.exe/\.exe\n/g" dl.log | grep -m1 "^http.*\.exe$")
 #calculate file identificator which will be used as uniq ID for this file
 id=$(echo "$link" | sed "s/^.*\///g")
 
-#look if this filename is in database
+#look if this file id is in database
 grep "$id" $db > /dev/null
 if [ $? -ne 0 ]; then
 
