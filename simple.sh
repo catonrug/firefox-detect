@@ -18,7 +18,6 @@ download=$(echo "https://www.mozilla.org/en-US/firefox/all/")
 lang=$(echo "en-US")
 
 #download all links and put every link in the loop
-#do not include links with "PortableApps" or "FarManager" or "Alpha" or "AutoUpdate" in the url
 wget -qO- "$download" | sed "s/http/\nhttp/g;s/\"/\n/g" | \
 grep "^http.*win.*lang.*`echo $lang`" | \
 sort | uniq | \
